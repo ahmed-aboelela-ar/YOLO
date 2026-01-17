@@ -48,15 +48,15 @@ def generate_annotations(filename, shape_list, img_size):
     return xmlstr
 
 
-def generate_data():
+def generate_data(image_count=IMG_COUNT, img_size=IMG_SIZE):
     generate_directories_of_VOC()
     train_file = open(os.path.join(ROOT_DIR, 'ImageSets', 'Main', 'train.txt'), 'w')
 
-    for i in range(IMG_COUNT):
+    for i in range(image_count):
         file_id = f"syn_{i:05d}"
         filename = f"{file_id}.jpg"
 
-        img = np.zeros((IMG_SIZE, IMG_SIZE, 3), dtype=np.uint8)
+        img = np.zeros((img_size, img_size, 3), dtype=np.uint8)
         
         shapes_in_image = []
 
@@ -67,18 +67,18 @@ def generate_data():
             
             if obj_type == 'circle':
                 r = np.random.randint(15, 50)
-                cx = np.random.randint(r, IMG_SIZE - r)
-                cy = np.random.randint(r, IMG_SIZE - r)
-                color = (255, 0, 0)
+                cx = np.random.randint(r, img_size - r)
+                cy = np.random.randint(r, img_size - r)
+                color = (0, 0, 255)
                 cv2.circle(img, (cx, cy), r, color, -1)
                 xmin, xmax = cx - r, cx + r
                 ymin, ymax = cy - r, cy + r
 
             elif obj_type == 'rectangle':
                 w, h = np.random.randint(30, 100), np.random.randint(30, 100)
-                x = np.random.randint(w, IMG_SIZE - w)
-                y = np.random.randint(h, IMG_SIZE - h)
-                color = (0, 0, 255)
+                x = np.random.randint(w, img_size - w)
+                y = np.random.randint(h, img_size - h)
+                color = (255, 0, 0)
                 cv2.rectangle(img, (x, y), (x + w, y + h), color, -1)
                 xmin, xmax = x, x + w
                 ymin, ymax = y, y + h
@@ -92,7 +92,7 @@ def generate_data():
             })
 
         cv2.imwrite(os.path.join(ROOT_DIR, 'JPEGImages', filename), img)
-        annotation = generate_annotations(filename, shapes_in_image, IMG_SIZE)
+        annotation = generate_annotations(filename, shapes_in_image, img_size)
         with open(os.path.join(ROOT_DIR, 'Annotations', f"{file_id}.xml"), 'w') as f:
             f.write(annotation)
         train_file.write(f"{file_id}\n")
