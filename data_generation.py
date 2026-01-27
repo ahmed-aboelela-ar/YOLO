@@ -3,12 +3,14 @@ import xml.etree.ElementTree as ET
 from xml.dom import minidom
 import numpy as np
 import cv2
+from constants import CLASSES
 
 
 ROOT_DIR = os.path.join(os.getcwd(), 'synthetic_voc')
 IMG_SIZE = 448
-IMG_COUNT = 1000
-CLASSES = ["circle", 'rectangle']
+IMG_COUNT = 16384
+VAL_RATIO = 0.1
+TEST_RATIO = 0.1
 
 
 def generate_directories_of_VOC():
@@ -51,6 +53,9 @@ def generate_annotations(filename, shape_list, img_size):
 def generate_data(image_count=IMG_COUNT, img_size=IMG_SIZE):
     generate_directories_of_VOC()
     train_file = open(os.path.join(ROOT_DIR, 'ImageSets', 'Main', 'train.txt'), 'w')
+    val_file = open(os.path.join(ROOT_DIR, 'ImageSets', 'Main', 'val.txt'), 'w')
+    test_file = open(os.path.join(ROOT_DIR, 'ImageSets', 'Main', 'test.txt'), 'w')
+
 
     for i in range(image_count):
         file_id = f"syn_{i:05d}"
@@ -76,8 +81,8 @@ def generate_data(image_count=IMG_COUNT, img_size=IMG_SIZE):
 
             elif obj_type == 'rectangle':
                 w, h = np.random.randint(30, 100), np.random.randint(30, 100)
-                x = np.random.randint(w, img_size - w)
-                y = np.random.randint(h, img_size - h)
+                x = np.random.randint(0, img_size - w)
+                y = np.random.randint(0, img_size - h)
                 color = (255, 0, 0)
                 cv2.rectangle(img, (x, y), (x + w, y + h), color, -1)
                 xmin, xmax = x, x + w
@@ -95,8 +100,17 @@ def generate_data(image_count=IMG_COUNT, img_size=IMG_SIZE):
         annotation = generate_annotations(filename, shapes_in_image, img_size)
         with open(os.path.join(ROOT_DIR, 'Annotations', f"{file_id}.xml"), 'w') as f:
             f.write(annotation)
-        train_file.write(f"{file_id}\n")
+
+        r = np.random.rand()
+        if r < VAL_RATIO:
+            val_file.write(f"{file_id}\n")
+        elif r < (VAL_RATIO + TEST_RATIO):
+            test_file.write(f"{file_id}\n")
+        else:
+            train_file.write(f"{file_id}\n")
     train_file.close()
+    val_file.close()
+    test_file.close()
 
 
 
