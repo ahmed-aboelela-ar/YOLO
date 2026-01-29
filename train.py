@@ -2,6 +2,7 @@ from neural_network_backbone import TinyYoloV1
 from synthetic_voc_dataset import VocDataset
 from torch.utils.data import DataLoader
 from torchvision import transforms
+from torch.optim.lr_scheduler import CosineAnnealingLR
 import torch
 import os
 from loss import YoloLoss
@@ -13,23 +14,21 @@ if __name__ == '__main__':
     model = TinyYoloV1()
     
     transform = transforms.Compose([
-        # transforms.ToPILImage(),
-        # transforms.Resize((448, 448)),
-        # transforms.ToTensor()
     ])
 
     dataset_train = VocDataset('synthetic_voc', split='train', transform=transform)
     dataset_val = VocDataset('synthetic_voc', split='val', transform=transform)
 
 
-    train_dataloader = DataLoader(dataset_train, batch_size=64, shuffle=True, num_workers=4, pin_memory=True)
-    val_dataloader = DataLoader(dataset_val, batch_size=64, shuffle=False, num_workers=4, pin_memory=True)
+    train_dataloader = DataLoader(dataset_train, batch_size=128, shuffle=True, num_workers=4, pin_memory=True)
+    val_dataloader = DataLoader(dataset_val, batch_size=128, shuffle=False, num_workers=4, pin_memory=True)
 
 
     loss = YoloLoss(S=7, B=2, C=2)
+    EPOCHS = 80
     
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-
+    scheduler = CosineAnnealingLR(optimizer, T_max=EPOCHS)
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Training on: {device}")
@@ -38,12 +37,11 @@ if __name__ == '__main__':
 
     map_metric = mAP(device)
 
-    if os.path.exists("tiny_yolo_v1_best.pth"):
-        model.load_state_dict(torch.load("tiny_yolo_v1_best.pth"))
-        print("Model loaded from 'tiny_yolo_v1_best.pth'")
+    # if os.path.exists("tiny_yolo_v1_best.pth"):
+    #     model.load_state_dict(torch.load("tiny_yolo_v1_best.pth"))
+    #     print("Model loaded from 'tiny_yolo_v1_best.pth'")
 
 
-    EPOCHS = 30
     best_val_loss = float('inf')
 
     for epoch in range(EPOCHS):
@@ -93,6 +91,8 @@ if __name__ == '__main__':
             print(f"--> mAP@0.5: {map50:.4f} | mAP@0.5:0.95: {map_all:.4f}")
         else:
             map_metric.metric.reset()
+        
+        scheduler.step()
 
 
 
