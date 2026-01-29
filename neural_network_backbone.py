@@ -54,23 +54,7 @@ class TinyYoloV1(nn.Module):
             ConvBlock(256, 256, kernel_size=3, stride=1, padding=1), #27
             ConvBlock(256, 256, kernel_size=3, stride=1, padding=1), #28
         )
-        
-        
-        # nn.Sequential(
-        #     ConvBlock(in_channels, 16, kernel_size=3, stride=2, padding=1),
-            
-        #     ConvBlock(16, 32, kernel_size=3, stride=2, padding=1),
-            
-        #     ConvBlock(32, 64, kernel_size=3, stride=2, padding=1),
-            
-        #     ConvBlock(64, 128, kernel_size=3, stride=2, padding=1),
-            
-        #     ConvBlock(128, 128, kernel_size=3, stride=2, padding=1),
-            
-        #     ConvBlock(128, 256, kernel_size=3, stride=2, padding=1),
-        # )
-        
-        
+    
         
         self.head = nn.Sequential(
             nn.Flatten(),
@@ -79,20 +63,10 @@ class TinyYoloV1(nn.Module):
             nn.LeakyReLU(0.1),
             nn.Linear(512, self.output_dim) 
         )
-        
-        # nn.Sequential(
-        #     nn.Flatten(),
-        #     nn.Linear(1024 * 7 * 7, 496),
-        #     nn.Dropout(0.5), # Standard is 0.5, you had 0.0
-        #     nn.LeakyReLU(0.1),
-        #     nn.Linear(496, self.output_dim) # Now Dynamic (588)
-        # )
 
     def forward(self, x):
         x = self.backbone(x)
         x = self.head(x)
-        
-        # Reshape to (Batch, 7, 7, 12)
         x = x.view(-1, self.S, self.S, (self.B * 5 + self.C))
         
         return x

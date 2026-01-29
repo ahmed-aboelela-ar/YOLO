@@ -6,11 +6,6 @@ import numpy as np
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 from data_generation import generate_data, ROOT_DIR
-# Import your generation logic here. 
-# Assuming the previous script is named 'data_generator.py'
-# from data_generator import generate_data, ROOT_DIR
-# For this standalone test, we define the config directly:
-
 class TestSyntheticDataset(unittest.TestCase):
 
     @classmethod
@@ -19,15 +14,10 @@ class TestSyntheticDataset(unittest.TestCase):
         Runs once before all tests. 
         Generates a fresh batch of data to test against.
         """
-        # Clean up any existing data to ensure a fresh test
         if os.path.exists(ROOT_DIR):
             shutil.rmtree(ROOT_DIR)
         
         generate_data(image_count=10)
-        # Trigger the generation (assuming the function is available)
-        # If imported: generate_data()
-        # For this test file to run standalone, I'm assuming you run the 
-        # generator script first, or we can mock the generation here.
         if not os.path.exists(ROOT_DIR):
             raise RuntimeError(f"Data not found. Please run the generation script first to create '{ROOT_DIR}'.")
 
@@ -74,19 +64,16 @@ class TestSyntheticDataset(unittest.TestCase):
             tree = ET.parse(os.path.join(xml_dir, xml_file))
             root = tree.getroot()
 
-            # Check filename tag matches actual file
             xml_filename = root.find('filename').text
             self.assertEqual(xml_filename, xml_file.replace('.xml', '.jpg'), 
                              f"Filename mismatch in {xml_file}")
 
-            # Check image size
             size = root.find('size')
             width = int(size.find('width').text)
             height = int(size.find('height').text)
             self.assertGreater(width, 0)
             self.assertGreater(height, 0)
 
-            # Check objects
             for obj in root.findall('object'):
                 bndbox = obj.find('bndbox')
                 xmin = int(bndbox.find('xmin').text)
@@ -94,7 +81,6 @@ class TestSyntheticDataset(unittest.TestCase):
                 xmax = int(bndbox.find('xmax').text)
                 ymax = int(bndbox.find('ymax').text)
 
-                # Logical sanity checks
                 self.assertGreaterEqual(xmin, 0)
                 self.assertGreaterEqual(ymin, 0)
                 self.assertLessEqual(xmax, width)
@@ -113,7 +99,6 @@ class TestSyntheticDataset(unittest.TestCase):
         img_dir = os.path.join(ROOT_DIR, "JPEGImages")
         xml_files = [f for f in os.listdir(xml_dir) if f.endswith('.xml')]
 
-        # Sample 5 random files to test (to save time)
         sample_files = xml_files[:5]
 
         for xml_file in sample_files:
@@ -132,21 +117,16 @@ class TestSyntheticDataset(unittest.TestCase):
                 xmax = int(bndbox.find('xmax').text)
                 ymax = int(bndbox.find('ymax').text)
 
-                # Calculate center point of the box
                 center_x = (xmin + xmax) // 2
                 center_y = (ymin + ymax) // 2
 
-                # Get pixel color at center (BGR format)
                 pixel_color = img[center_y, center_x]
 
                 if cls_name == "rectangle":
-                    # Expect Blue (255, 0, 0)
-                    # We allow small tolerance if you add compression/noise later
                     self.assertTrue(np.allclose(pixel_color, [255, 0, 0], atol=5),
                                     f"Expected Blue for rectangle at {center_x},{center_y}, got {pixel_color}")
                 
                 elif cls_name == "circle":
-                    # Expect Red (0, 0, 255)
                     self.assertTrue(np.allclose(pixel_color, [0, 0, 255], atol=5),
                                     f"Expected Red for circle at {center_x},{center_y}, got {pixel_color}")
 

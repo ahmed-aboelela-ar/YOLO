@@ -92,7 +92,6 @@ if __name__ == '__main__':
             map50, map_all = map_metric.compute()
             print(f"--> mAP@0.5: {map50:.4f} | mAP@0.5:0.95: {map_all:.4f}")
         else:
-            # Important: Reset metric even if we don't print, to clear memory
             map_metric.metric.reset()
 
 

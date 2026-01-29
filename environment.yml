@@ -1,7 +1,7 @@
 name: yolo-toy
 channels:
   - pytorch
-  - nvidia        # Required for CUDA dependencies
+  - nvidia        
   - conda-forge
   - defaults
 dependencies:
@@ -9,7 +9,7 @@ dependencies:
   - pytorch
   - torchvision
   - torchmetrics
-  - pytorch-cuda  # Forces PyTorch to install with CUDA support
+  - pytorch-cuda  
   - numpy
-  - opencv        # Installs cv2
+  - opencv       
   - pycocotools

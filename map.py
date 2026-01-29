@@ -1,6 +1,5 @@
-from constants import CLASS_MAPPING, MAP_IOU_THRESHOLDS, S, B, C
 import torch
-from utils import from_yolo_to_actual_coord, calculate_IOU, get_confidences, cellboxes_to_boxes
+from utils import cellboxes_to_boxes
 from torchmetrics.detection import MeanAveragePrecision
 import torch.nn as nn
 
