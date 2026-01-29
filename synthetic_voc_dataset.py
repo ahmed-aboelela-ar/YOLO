@@ -4,6 +4,8 @@ import cv2
 from pathlib import Path
 import os
 import xml.etree.ElementTree as ET
+from constants import CLASS_MAPPING, S, B, C
+
 
 class VocDataset(Dataset):
     def __init__(self, root_dir, split='train', transform=None):
@@ -18,14 +20,11 @@ class VocDataset(Dataset):
         with open(self._splitpath, 'r') as f:
             self.ids = f.read().splitlines()
 
-        self.class_mapping = {
-            'circle': 0,
-            'rectangle': 1
-        }
+        self.class_mapping = CLASS_MAPPING
 
-        self.s = 7
-        self.b = 2
-        self.c = 2
+        self.s = S
+        self.b = B
+        self.c = C
 
 
 

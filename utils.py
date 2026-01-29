@@ -1,7 +1,7 @@
 import torch 
 import torch.nn as nn
 import cv2
-from constants import CLASSES, CONF_THRESHOLD
+from constants import CLASSES, CONF_THRESHOLD, S
 import numpy as np
 from torchvision.ops import nms
 
@@ -29,7 +29,36 @@ def from_yolo_to_actual_coord(grid):
 
     return get_corners(box1_xy_global, box1_wh), get_corners(box2_xy_global, box2_wh)
 
+def get_confidences(grid):
+    conf1 = grid[..., 4]
+    conf2 = grid[..., 9]
+    return conf1, conf2
+
+
+def cellboxes_to_boxes(predictions):
+    batch_size = predictions.shape[0]
+
+    corners1, corners2 = from_yolo_to_actual_coord(predictions)
+    conf1, conf2 = get_confidences(predictions)
+
+    corners1 = corners1.reshape(batch_size, -1, 4)
+    corners2 = corners2.reshape(batch_size, -1, 4)
+
+    conf1 = conf1.reshape(batch_size, -1, 1)
+    conf2 = conf2.reshape(batch_size, -1, 1)
+
+    class_probs = predictions[..., 10:]
+    best_class = torch.argmax(class_probs, dim=-1).unsqueeze(-1).reshape(batch_size, -1, 1)
     
+    box1_vec = torch.cat([corners1, conf1, best_class], dim=-1)
+    box2_vec = torch.cat([corners2, conf2, best_class], dim=-1)
+    
+    all_boxes = torch.cat([box1_vec, box2_vec], dim=1)
+    return all_boxes
+     
+
+
+
 def calculate_IOU(pred_boxes_actual, target_boxes):
     inter_box = torch.zeros_like(pred_boxes_actual)
     
@@ -167,24 +196,30 @@ def draw_and_interpret(img, pred_grid, target_grid=None):
 
 
 if __name__ == "__main__":
-    pred_grid = torch.zeros((1, 2, 2, 12))
-    target_grid = torch.zeros((1, 2, 2, 12))
-
-    pred_grid[0, 0, 0, :] = torch.tensor([0.6, 0.5, 0.25, 0.09, 0.8, 
-                                          0.8, 0.4, 0.4, 0.6, 0.9, 
-                                          0.1, 0.0])
     
-    target_grid[0, 0, 0, :] = torch.tensor([0.5, 0.5, 0.16, 0.16, 1.0,
-                                            0.0, 0.0, 0.0, 0.0, 0.0,
-                                            1.0, 0.0])
+    test_tensor = torch.rand((8, 7, 7, 12))
+    cellboxes_to_boxes(test_tensor)
+    
+    
+    
+    # pred_grid = torch.zeros((1, 2, 2, 12))
+    # target_grid = torch.zeros((1, 2, 2, 12))
+
+    # pred_grid[0, 0, 0, :] = torch.tensor([0.6, 0.5, 0.25, 0.09, 0.8, 
+    #                                       0.8, 0.4, 0.4, 0.6, 0.9, 
+    #                                       0.1, 0.0])
+    
+    # target_grid[0, 0, 0, :] = torch.tensor([0.5, 0.5, 0.16, 0.16, 1.0,
+    #                                         0.0, 0.0, 0.0, 0.0, 0.0,
+    #                                         1.0, 0.0])
     
 
-    pred_grid[0, 1, 1, :] = torch.tensor([0.6, 0.5, 0.25, 0.09, 0.8, 
-                                          0.8, 0.4, 0.4, 0.6, 0.9, 
-                                          0.1, 0.0])
+    # pred_grid[0, 1, 1, :] = torch.tensor([0.6, 0.5, 0.25, 0.09, 0.8, 
+    #                                       0.8, 0.4, 0.4, 0.6, 0.9, 
+    #                                       0.1, 0.0])
     
-    target_grid[0, 1, 1, :] = torch.tensor([0.85, 0.4, 0.4, 0.55, 1.0,
-                                            0.0, 0.0, 0.0, 0.0, 0.0,
-                                            1.0, 0.0])
+    # target_grid[0, 1, 1, :] = torch.tensor([0.85, 0.4, 0.4, 0.55, 1.0,
+    #                                         0.0, 0.0, 0.0, 0.0, 0.0,
+    #                                         1.0, 0.0])
 
-    get_analysis_masks(pred_grid, target_grid)
+    # get_analysis_masks(pred_grid, target_grid)

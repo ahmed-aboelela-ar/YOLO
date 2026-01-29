@@ -3,8 +3,10 @@ from synthetic_voc_dataset import VocDataset
 from torch.utils.data import DataLoader
 from torchvision import transforms
 import torch
-
+import os
 from loss import YoloLoss
+from map import mAP
+
 
 
 if __name__ == '__main__':
@@ -34,8 +36,14 @@ if __name__ == '__main__':
     model.to(device)
     loss.to(device)
 
+    map_metric = mAP(device)
 
-    EPOCHS = 100
+    if os.path.exists("tiny_yolo_v1_best.pth"):
+        model.load_state_dict(torch.load("tiny_yolo_v1_best.pth"))
+        print("Model loaded from 'tiny_yolo_v1_best.pth'")
+
+
+    EPOCHS = 30
     best_val_loss = float('inf')
 
     for epoch in range(EPOCHS):
@@ -71,12 +79,21 @@ if __name__ == '__main__':
 
                 predictions = model(images)
                 val_loss += loss(predictions, targets).item()
+                map_metric.update(predictions, targets)
             val_loss /= len(val_dataloader)
             print(f"Validation Loss: {val_loss:.4f}")
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
                 torch.save(model.state_dict(), "tiny_yolo_v1_best.pth")
                 print("Best model saved!")
+
+        if (epoch + 1) % 10 == 0:
+            print("Calculating mAP...")
+            map50, map_all = map_metric.compute()
+            print(f"--> mAP@0.5: {map50:.4f} | mAP@0.5:0.95: {map_all:.4f}")
+        else:
+            # Important: Reset metric even if we don't print, to clear memory
+            map_metric.metric.reset()
 
 
 
