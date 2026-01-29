@@ -7,17 +7,34 @@ import torch
 import os
 from loss import YoloLoss
 from map import mAP
-
+import albumentations  as  A
+from albumentations.pytorch import ToTensorV2
+import time
 
 
 if __name__ == '__main__':
     model = TinyYoloV1()
     
-    transform = transforms.Compose([
-    ])
+    train_transform = A.Compose([
+        A.RandomCrop(width=448, height=448),
+        A.VerticalFlip(p=0.5),
+        A.HorizontalFlip(p=0.5),
+        A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.1, rotate_limit=15, p=0.5),
+        A.RandomBrightnessContrast(p=0.2),
+        A.Blur(p=0.3),
+        A.GaussNoise(p=0.1, std_range=(0.1, 0.5)),
+        A.RandomBrightnessContrast(p=0.2),
 
-    dataset_train = VocDataset('synthetic_voc', split='train', transform=transform)
-    dataset_val = VocDataset('synthetic_voc', split='val', transform=transform)
+    ],
+    bbox_params=A.BboxParams(
+        format='yolo',
+
+        label_fields=['class_labels']
+    )
+    )
+
+    dataset_train = VocDataset('synthetic_voc', split='train', transform=train_transform)
+    dataset_val = VocDataset('synthetic_voc', split='val')
 
 
     train_dataloader = DataLoader(dataset_train, batch_size=128, shuffle=True, num_workers=4, pin_memory=True)
@@ -43,7 +60,7 @@ if __name__ == '__main__':
 
 
     best_val_loss = float('inf')
-
+    
     for epoch in range(EPOCHS):
         model.train()
         loop_loss = 0

@@ -5,6 +5,7 @@ from pathlib import Path
 import os
 import xml.etree.ElementTree as ET
 from constants import CLASS_MAPPING, S, B, C
+import numpy as np
 
 
 class VocDataset(Dataset):
@@ -37,10 +38,19 @@ class VocDataset(Dataset):
         img = self.read_image(name)
         anno = self.read_annotation(name)
 
+        if self.transform:
+            bbox = np.array([a['bbox'] for a in anno])
+            class_labels = np.array([a['class'] for a in anno])
+
+            transformed = self.transform(image=img, bboxes=bbox, class_labels=class_labels)
+            img = transformed['image']
+            anno = [{'bbox': b, 'class': c} for b, c in zip(transformed['bboxes'], transformed['class_labels'])]
+            
+
+        img = self.convert_image_to_tensor(img)
         grid = self.encode_to_grid(anno)
 
-        if self.transform:
-            img = self.transform(img)
+        
 
         return img, grid
 
@@ -116,7 +126,11 @@ class VocDataset(Dataset):
         img = cv2.imread(str(path))
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
+        
+
+        return img
+    
+    def convert_image_to_tensor(self, img):
         img_tensor = torch.from_numpy(img).permute(2, 0, 1)
         img_tensor = img_tensor.float() / 255.0
-
         return img_tensor
