@@ -10,7 +10,8 @@ from map import mAP
 import albumentations  as  A
 from albumentations.pytorch import ToTensorV2
 import time
-
+from pathlib import Path
+import datetime
 
 if __name__ == '__main__':
     model = TinyYoloV1()
@@ -58,13 +59,19 @@ if __name__ == '__main__':
     #     model.load_state_dict(torch.load("tiny_yolo_v1_best.pth"))
     #     print("Model loaded from 'tiny_yolo_v1_best.pth'")
 
+    model_saving_path =  Path('models')
+    now = datetime.datetime.now()
+    current_models_saving_path = model_saving_path / now.strftime("%Y-%m-%d_%H-%M-%S")
+    current_models_saving_path.mkdir(parents=True, exist_ok=True)
+    
+
 
     best_val_loss = float('inf')
     
     for epoch in range(EPOCHS):
         model.train()
         loop_loss = 0
-        
+
         for batch_idx, (images, targets) in enumerate(train_dataloader):
             images = images.to(device)
             targets = targets.to(device)
@@ -113,7 +120,7 @@ if __name__ == '__main__':
 
 
 
-    torch.save(model.state_dict(), "tiny_yolo_v1.pth")
-    print("Training finished and model saved to 'tiny_yolo_v1.pth'")
+    torch.save(model.state_dict(), current_models_saving_path / f"tiny_yolo_v1_{epoch+1}.pth")
+    print(f"Model saved to {current_models_saving_path / f'tiny_yolo_v1_{epoch+1}.pth'}")
 
     
